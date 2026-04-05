@@ -545,6 +545,20 @@
       }
     }
 
+    /* ── Deck glow animations ───────────────────── */
+    @keyframes deckGlowCorrect {
+      0%   { filter: drop-shadow(0 0 0px  rgba(46,204,113,0)); }
+      20%  { filter: drop-shadow(0 0 10px #2ecc71) drop-shadow(0 0 22px rgba(46,204,113,0.55)); }
+      100% { filter: drop-shadow(0 0 0px  rgba(46,204,113,0)); }
+    }
+    @keyframes deckGlowWrong {
+      0%   { filter: drop-shadow(0 0 0px  rgba(231,76,60,0)); }
+      20%  { filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 22px rgba(231,76,60,0.55)); }
+      100% { filter: drop-shadow(0 0 0px  rgba(231,76,60,0)); }
+    }
+    pre.card.glow-correct { animation: deckGlowCorrect 0.8s ease-out forwards; }
+    pre.card.glow-wrong   { animation: deckGlowWrong   0.8s ease-out forwards; }
+
     /* ── Deck indicator ──────────────────────────── */
     #deck-info {
       display: flex;
@@ -906,7 +920,10 @@ function renderDeck() {
   wrap.innerHTML = '';
 
   const backEl = document.createElement('pre');
-  backEl.className = 'card black';
+  const glowCls = G.phase === 'result'
+    ? (G.lastResult === 'correct' ? ' glow-correct' : ' glow-wrong')
+    : '';
+  backEl.className = 'card black' + glowCls;
   backEl.style.color = 'rgba(80,130,200,0.65)';
   backEl.textContent = DECK_BACK;
   wrap.appendChild(backEl);
