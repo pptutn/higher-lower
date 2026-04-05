@@ -452,51 +452,97 @@
 
     .go-table tr.active td { color: var(--gold); }
 
+    /* ── Auto-advance progress bar (mobile result phase) ── */
+    .ap-progress {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .ap-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      animation: progressDrain 1.5s linear forwards;
+    }
+    .ap-progress-fill.ok  { background: var(--green); }
+    .ap-progress-fill.bad { background: var(--red); }
+    @keyframes progressDrain {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+
+    .ap-tap-hint {
+      font-size: 0.6rem;
+      color: rgba(106,154,106,0.5);
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+
+    .ap-compact-result {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-align: center;
+    }
+    .ap-compact-result .hl { color: var(--text); }
+
     /* ── Responsive ──────────────────────────────── */
     @media (max-width: 600px) {
       pre.card.big    { font-size: 12px; }
       .guess-row      { gap: 7px; }
       .btn-higher, .btn-lower, .btn-same {
-        font-size: 0.85rem; padding: 11px 16px; min-height: 44px;
+        font-size: 0.9rem; padding: 13px 0; flex: 1; min-height: 48px;
       }
-      .btn-next       { padding: 10px 20px; min-height: 44px; }
-      .btn-sm, .btn-hint { padding: 7px 10px; min-height: 36px; }
+      .guess-row      { width: 100%; }
+      .btn-sm         { padding: 7px 8px; min-height: 36px; font-size: 0.68rem; }
+      .btn-hint, .btn-sd { padding: 7px 8px; min-height: 36px; font-size: 0.65rem; }
 
-      header          { padding: 8px 10px; gap: 6px; }
-      .hdr-title      { font-size: 0.8rem; letter-spacing: 0.14em; }
-      #score-wrap     { font-size: 0.8rem; }
-      #turns-wrap     { font-size: 0.68rem; }
+      header          { padding: 7px 8px; gap: 5px; }
+      .hdr-title      { font-size: 0.72rem; letter-spacing: 0.1em; }
+      #score-wrap     { font-size: 0.78rem; }
+      #turns-wrap     { font-size: 0.65rem; }
+      .hdr-mid        { gap: 10px; }
 
-      main            { padding: 10px 8px 16px; gap: 10px; }
+      /* Grid fills screen, action panel fixed at bottom */
+      main {
+        padding: 8px 8px 0; gap: 8px;
+        /* leave room for fixed panel — set via JS via --panel-h */
+        padding-bottom: var(--panel-h, 120px);
+      }
+
+      /* Deck indicator is redundant — turns left shown in header */
+      #deck-info, .divider { display: none; }
 
       .piles-with-deck {
         flex-direction: column;
         align-items: center;
-        gap: 10px;
         overflow-x: unset;
         width: 100%;
+        padding: 0;
       }
       #piles-area {
         width: 100%;
         grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      #piles-area .pile    { align-items: center; }
+      #piles-area pre.card { font-size: 13px; }
+
+      /* Fixed action panel — always visible above thumb */
+      #action-panel {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 100;
+        border-radius: 12px 12px 0 0;
+        border-left: none; border-right: none; border-bottom: none;
+        border-top: 1px solid #265a32;
+        background: rgba(10, 22, 13, 0.97);
+        backdrop-filter: blur(8px);
+        min-height: unset;
+        padding: 12px 14px 18px;
         gap: 10px;
       }
-      #piles-area .pile       { align-items: center; }
-      #piles-area pre.card    { font-size: 13px; }
-      .divider                { width: 90%; height: 1px; }
-      #deck-info {
-        flex-direction: row;
-        gap: 10px;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-      }
-
-      .result-row     { flex-wrap: wrap; justify-content: center; gap: 10px; }
-      .r-arrow        { font-size: 1.2rem; margin-bottom: 0; align-self: center; }
-
-      #action-panel   { padding: 14px 12px; }
-      .ap-keys        { font-size: 0.6rem; line-height: 1.7; }
     }
 
     /* ── Deck indicator ──────────────────────────── */
@@ -714,9 +760,14 @@ function makeGuess(guess) {
   G.turnsLeft--;
   G.phase = 'result';
   render();
+
+  if (window.matchMedia('(max-width: 600px)').matches) {
+    G._autoAdvance = setTimeout(nextTurn, 1500);
+  }
 }
 
 function nextTurn() {
+  clearTimeout(G._autoAdvance);
   if (G.phase !== 'result') return;
   G.nominated  = null;
   G.dealtCard  = null;
@@ -870,21 +921,28 @@ function renderDeck() {
 //  Render — Action panel
 // ═══════════════════════════════════════════════
 function renderAction() {
-  const panel = document.getElementById('action-panel');
+  const panel  = document.getElementById('action-panel');
+  const mobile = window.matchMedia('(max-width: 600px)').matches;
   panel.innerHTML = '';
+  panel.onclick = null;
 
   // ── nominate ──────────────────────────────────
   if (G.phase === 'nominate') {
-    panel.innerHTML = `
-      <div class="ap-prompt">── Select a pile to nominate ──</div>
-      <div class="ap-keys">
-        <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">1–9</span>
-        &nbsp;select pile &nbsp;|&nbsp;
-        <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">H</span>&nbsp;Higher&nbsp;
-        <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">L</span>&nbsp;Lower&nbsp;
-        <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">S</span>&nbsp;Same&nbsp;|&nbsp;
-        <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">↵</span>&nbsp;next turn
-      </div>`;
+    if (mobile) {
+      panel.innerHTML = `<div class="ap-prompt">── tap a pile ──</div>`;
+    } else {
+      panel.innerHTML = `
+        <div class="ap-prompt">── Select a pile to nominate ──</div>
+        <div class="ap-keys">
+          <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">1–9</span>
+          &nbsp;select pile &nbsp;|&nbsp;
+          <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">H</span>&nbsp;Higher&nbsp;
+          <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">L</span>&nbsp;Lower&nbsp;
+          <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">S</span>&nbsp;Same&nbsp;|&nbsp;
+          <span style="border:1px solid var(--muted);padding:0 4px;border-radius:2px;font-size:0.65rem">↵</span>&nbsp;next turn
+        </div>`;
+    }
+    syncPanelHeight();
     return;
   }
 
@@ -896,10 +954,13 @@ function renderAction() {
 
     const lbl = document.createElement('div');
     lbl.className = 'ap-sublabel';
-    lbl.textContent = `Pile ${G.nominated + 1} — What comes next?`;
+    lbl.textContent = mobile
+      ? `Pile ${G.nominated + 1} — higher, lower or same?`
+      : `Pile ${G.nominated + 1} — What comes next?`;
     panel.appendChild(lbl);
 
-    panel.appendChild(makeCard(topCard, { big: true }));
+    // Only show big card on desktop — card is visible in grid on mobile
+    if (!mobile) panel.appendChild(makeCard(topCard, { big: true }));
 
     const guessRow = document.createElement('div');
     guessRow.className = 'guess-row';
@@ -914,7 +975,6 @@ function renderAction() {
       const w   = p => Math.max(1, Math.round(p * 100)) + '%';
       const tbl = document.createElement('div');
       tbl.className = 'prob-table';
-
       [
         { key:'higher', label:'HIGHER', fill:'higher' },
         { key:'lower',  label:'LOWER',  fill:'lower'  },
@@ -924,83 +984,116 @@ function renderAction() {
         row.className = `prob-row${key === best ? ' best' : ''}`;
         row.innerHTML = `
           <span class="prob-lbl">${label}</span>
-          <div class="prob-bar">
-            <div class="prob-fill ${fill}" style="width:${w(probs[key])}"></div>
-          </div>
+          <div class="prob-bar"><div class="prob-fill ${fill}" style="width:${w(probs[key])}"></div></div>
           <span class="prob-pct">${fmt(probs[key])}${key === best ? ' ★' : ''}</span>`;
         tbl.appendChild(row);
       });
-
       panel.appendChild(tbl);
     }
+    syncPanelHeight();
     return;
   }
 
   // ── result ────────────────────────────────────
   if (G.phase === 'result') {
-    const prevCard = G.piles[G.nominated].at(-2);
-    const newCard  = G.piles[G.nominated].at(-1);
-    const correct  = G.lastResult === 'correct';
+    const prevCard  = G.piles[G.nominated].at(-2);
+    const newCard   = G.piles[G.nominated].at(-1);
+    const correct   = G.lastResult === 'correct';
     const actualStr = newCard.value > prevCard.value ? 'HIGHER'
                     : newCard.value < prevCard.value ? 'LOWER' : 'SAME';
 
-    // Trigger score flash
+    // Score flash
     const sv = document.getElementById('score-val');
     if (!correct) {
       sv.classList.remove('flash');
-      void sv.offsetWidth; // reflow to restart animation
+      void sv.offsetWidth;
       sv.classList.add('flash');
     }
 
     const banner = document.createElement('div');
     banner.className = `result-banner ${correct ? 'ok' : 'bad'}`;
-    banner.textContent = correct
-      ? '✓  Correct — no penalty'
-      : '✗  Wrong — −1 point';
+    banner.textContent = correct ? '✓  Correct — no penalty' : '✗  Wrong — −1 point';
     panel.appendChild(banner);
 
-    const row = document.createElement('div');
-    row.className = 'result-row';
+    if (mobile) {
+      // Compact one-liner: "was K♠ → dealt 7♥ (lower)"
+      const det = document.createElement('div');
+      det.className = 'ap-compact-result';
+      det.innerHTML =
+        `was <span class="hl">${prevCard.rank}${prevCard.suit}</span>`
+        + ` → dealt <span class="hl">${newCard.rank}${newCard.suit}</span>`
+        + ` &nbsp;·&nbsp; <span class="hl">${actualStr}</span>`;
+      panel.appendChild(det);
 
-    const prevWrap = document.createElement('div');
-    prevWrap.className = 'r-card-wrap';
-    const prevLbl = document.createElement('div');
-    prevLbl.className = 'r-card-lbl';
-    prevLbl.textContent = 'was';
-    prevWrap.appendChild(prevLbl);
-    prevWrap.appendChild(makeCard(prevCard, { big: true }));
+      // Draining progress bar (matches auto-advance timer)
+      const prog = document.createElement('div');
+      prog.className = 'ap-progress';
+      const fill = document.createElement('div');
+      fill.className = `ap-progress-fill ${correct ? 'ok' : 'bad'}`;
+      prog.appendChild(fill);
+      panel.appendChild(prog);
 
-    const arrow = document.createElement('div');
-    arrow.className = 'r-arrow';
-    arrow.textContent = '→';
+      const hint = document.createElement('div');
+      hint.className = 'ap-tap-hint';
+      hint.textContent = 'tap to continue';
+      panel.appendChild(hint);
 
-    const newWrap = document.createElement('div');
-    newWrap.className = 'r-card-wrap';
-    const newLbl = document.createElement('div');
-    newLbl.className = 'r-card-lbl';
-    newLbl.textContent = 'dealt';
-    newWrap.appendChild(newLbl);
-    newWrap.appendChild(makeCard(newCard, { big: true, isNew: true }));
+      // Tap anywhere on panel to advance early
+      panel.onclick = e => { e.stopPropagation(); clearTimeout(G._autoAdvance); nextTurn(); };
+    } else {
+      const row = document.createElement('div');
+      row.className = 'result-row';
 
-    row.appendChild(prevWrap);
-    row.appendChild(arrow);
-    row.appendChild(newWrap);
-    panel.appendChild(row);
+      const prevWrap = document.createElement('div');
+      prevWrap.className = 'r-card-wrap';
+      const prevLbl = document.createElement('div');
+      prevLbl.className = 'r-card-lbl';
+      prevLbl.textContent = 'was';
+      prevWrap.appendChild(prevLbl);
+      prevWrap.appendChild(makeCard(prevCard, { big: true }));
 
-    const det = document.createElement('div');
-    det.className = 'result-detail';
-    det.innerHTML =
-      `Guessed <span class="hl">${G.lastGuess.toUpperCase()}</span>`
-      + ` &nbsp;·&nbsp; Actual <span class="hl">${actualStr}</span>`;
-    panel.appendChild(det);
+      const arrow = document.createElement('div');
+      arrow.className = 'r-arrow';
+      arrow.textContent = '→';
 
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-next';
-    btn.textContent = G.turnsLeft > 0 ? 'Next Turn  →' : 'Final Score  →';
-    btn.onclick = nextTurn;
-    panel.appendChild(btn);
+      const newWrap = document.createElement('div');
+      newWrap.className = 'r-card-wrap';
+      const newLbl = document.createElement('div');
+      newLbl.className = 'r-card-lbl';
+      newLbl.textContent = 'dealt';
+      newWrap.appendChild(newLbl);
+      newWrap.appendChild(makeCard(newCard, { big: true, isNew: true }));
+
+      row.appendChild(prevWrap);
+      row.appendChild(arrow);
+      row.appendChild(newWrap);
+      panel.appendChild(row);
+
+      const det = document.createElement('div');
+      det.className = 'result-detail';
+      det.innerHTML =
+        `Guessed <span class="hl">${G.lastGuess.toUpperCase()}</span>`
+        + ` &nbsp;·&nbsp; Actual <span class="hl">${actualStr}</span>`;
+      panel.appendChild(det);
+
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-next';
+      btn.textContent = G.turnsLeft > 0 ? 'Next Turn  →' : 'Final Score  →';
+      btn.onclick = nextTurn;
+      panel.appendChild(btn);
+    }
+    syncPanelHeight();
     return;
   }
+}
+
+// Keep main padding-bottom in sync with the fixed panel's actual height
+function syncPanelHeight() {
+  if (!window.matchMedia('(max-width: 600px)').matches) return;
+  requestAnimationFrame(() => {
+    const h = document.getElementById('action-panel').offsetHeight;
+    document.querySelector('main').style.setProperty('--panel-h', (h + 8) + 'px');
+  });
 }
 
 // ═══════════════════════════════════════════════
