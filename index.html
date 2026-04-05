@@ -747,7 +747,7 @@ function startGame() {
 //  Actions
 // ═══════════════════════════════════════════════
 function nominatePile(i) {
-  if (G.phase !== 'nominate') return;
+  if (G.phase !== 'nominate' && G.phase !== 'guess') return;
   G.nominated = i;
   G.phase = 'guess';
   render();
@@ -868,7 +868,7 @@ function renderPiles() {
   G.piles.forEach((pile, i) => {
     const isDead     = G.deadPiles.has(i);
     const nominated  = G.nominated === i;
-    const clickable  = G.phase === 'nominate' && !isDead;
+    const clickable  = (G.phase === 'nominate' || G.phase === 'guess') && !isDead;
     const newTopCard = nominated && G.phase === 'result';
 
     const pileEl = document.createElement('div');
@@ -1238,7 +1238,7 @@ document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-  if (G.phase === 'nominate') {
+  if (G.phase === 'nominate' || G.phase === 'guess') {
     const n = parseInt(e.key);
     if (n >= 1 && n <= 9 && !G.deadPiles.has(n - 1)) { nominatePile(n - 1); return; }
   }
