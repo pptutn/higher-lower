@@ -546,24 +546,8 @@
       }
     }
 
-    /* ── Card glow overlay (separate element, never touches pre.card) ── */
-    .card-glow {
-      position: absolute;
-      inset: 0;
-      border-radius: 3px;
-      pointer-events: none;
-      z-index: 5;
-    }
-    @keyframes glowCorrect {
-      0%,100% { box-shadow: 0 0 0px rgba(46,204,113,0); }
-      25%     { box-shadow: 0 0 14px #2ecc71, 0 0 28px rgba(46,204,113,0.5); }
-    }
-    @keyframes glowWrong {
-      0%,100% { box-shadow: 0 0 0px rgba(231,76,60,0); }
-      25%     { box-shadow: 0 0 14px #e74c3c, 0 0 28px rgba(231,76,60,0.5); }
-    }
-    .card-glow.correct { animation: glowCorrect 0.8s ease-out; }
-    .card-glow.wrong   { animation: glowWrong   0.8s ease-out; }
+    /* pile-stack glow transition — driven by JS inline styles */
+    .pile-stack { transition: box-shadow 0.7s ease-out; }
 
     /* ── Deck indicator ──────────────────────────── */
     #deck-info {
@@ -1228,17 +1212,26 @@ function showSdGameover() {
 }
 
 // ═══════════════════════════════════════════════
-//  Card glow (overlay element, never modifies pre.card)
+//  Card glow — JS transition on pile-stack (avoids iOS keyframe caching)
 // ═══════════════════════════════════════════════
 function applyResultGlow() {
   if (G.phase !== 'result' || G.nominated === null) return;
   const pileEls = document.querySelectorAll('#piles-area .pile');
   const stack   = pileEls[G.nominated]?.querySelector('.pile-stack');
   if (!stack) return;
-  const glow = document.createElement('div');
-  glow.className = `card-glow ${G.lastResult === 'correct' ? 'correct' : 'wrong'}`;
-  stack.appendChild(glow);
-  glow.addEventListener('animationend', () => glow.remove(), { once: true });
+
+  const correct = G.lastResult === 'correct';
+  const peak    = correct
+    ? '0 0 16px #2ecc71, 0 0 32px rgba(46,204,113,0.5)'
+    : '0 0 16px #e74c3c, 0 0 32px rgba(231,76,60,0.5)';
+
+  // Snap to peak with no transition, then let the CSS transition fade it out
+  stack.style.transition = 'none';
+  stack.style.boxShadow  = peak;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    stack.style.transition = 'box-shadow 0.7s ease-out';
+    stack.style.boxShadow  = '';
+  }));
 }
 
 // ═══════════════════════════════════════════════
