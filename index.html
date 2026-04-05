@@ -546,19 +546,24 @@
       }
     }
 
-    /* ── Card glow animations (box-shadow for broad Safari support) ── */
-    @keyframes cardGlowCorrect {
-      0%   { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(46,204,113,0); }
-      20%  { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 14px #2ecc71, 0 0 28px rgba(46,204,113,0.45); }
-      100% { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(46,204,113,0); }
+    /* ── Card glow overlay (separate element, never touches pre.card) ── */
+    .card-glow {
+      position: absolute;
+      inset: 0;
+      border-radius: 3px;
+      pointer-events: none;
+      z-index: 5;
     }
-    @keyframes cardGlowWrong {
-      0%   { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(231,76,60,0); }
-      20%  { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 14px #e74c3c, 0 0 28px rgba(231,76,60,0.45); }
-      100% { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(231,76,60,0); }
+    @keyframes glowCorrect {
+      0%,100% { box-shadow: 0 0 0px rgba(46,204,113,0); }
+      25%     { box-shadow: 0 0 14px #2ecc71, 0 0 28px rgba(46,204,113,0.5); }
     }
-    pre.card.glow-correct { animation: cardGlowCorrect 0.8s ease-out forwards; }
-    pre.card.glow-wrong   { animation: cardGlowWrong   0.8s ease-out forwards; }
+    @keyframes glowWrong {
+      0%,100% { box-shadow: 0 0 0px rgba(231,76,60,0); }
+      25%     { box-shadow: 0 0 14px #e74c3c, 0 0 28px rgba(231,76,60,0.5); }
+    }
+    .card-glow.correct { animation: glowCorrect 0.8s ease-out; }
+    .card-glow.wrong   { animation: glowWrong   0.8s ease-out; }
 
     /* ── Deck indicator ──────────────────────────── */
     #deck-info {
@@ -892,9 +897,6 @@ function renderPiles() {
     } else {
       const topCard = pile.at(-1);
       const cardEl = makeCard(topCard, { isNew: newTopCard });
-      if (nominated && G.phase === 'result') {
-        cardEl.classList.add(G.lastResult === 'correct' ? 'glow-correct' : 'glow-wrong');
-      }
       stackEl.appendChild(cardEl);
     }
 
@@ -1226,6 +1228,20 @@ function showSdGameover() {
 }
 
 // ═══════════════════════════════════════════════
+//  Card glow (overlay element, never modifies pre.card)
+// ═══════════════════════════════════════════════
+function applyResultGlow() {
+  if (G.phase !== 'result' || G.nominated === null) return;
+  const pileEls = document.querySelectorAll('#piles-area .pile');
+  const stack   = pileEls[G.nominated]?.querySelector('.pile-stack');
+  if (!stack) return;
+  const glow = document.createElement('div');
+  glow.className = `card-glow ${G.lastResult === 'correct' ? 'correct' : 'wrong'}`;
+  stack.appendChild(glow);
+  glow.addEventListener('animationend', () => glow.remove(), { once: true });
+}
+
+// ═══════════════════════════════════════════════
 //  Master render
 // ═══════════════════════════════════════════════
 function render() {
@@ -1233,6 +1249,7 @@ function render() {
   renderPiles();
   renderDeck();
   renderAction();
+  applyResultGlow();
 }
 
 // ═══════════════════════════════════════════════
