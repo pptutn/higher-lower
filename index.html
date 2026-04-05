@@ -170,13 +170,13 @@
     .pile.clickable { cursor: pointer; }
 
     .pile.clickable:hover .pile-stack {
-      filter: brightness(1.18) drop-shadow(0 0 5px rgba(255,255,255,0.18));
+      box-shadow: 0 0 8px rgba(255,255,255,0.22);
+      outline: 1px solid rgba(255,255,255,0.18);
     }
 
     .pile.nominated .pile-stack {
-      filter:
-        drop-shadow(0 0 7px var(--gold))
-        drop-shadow(0 0 2px rgba(232,160,0,0.6));
+      box-shadow: 0 0 0 2px var(--gold), 0 0 12px var(--gold), 0 0 24px rgba(232,160,0,0.45);
+      outline: 2px solid var(--gold);
     }
 
     /* Key badge shown on pile during nominate phase */
@@ -546,8 +546,35 @@
       }
     }
 
-    /* pile-stack glow transition — driven by JS inline styles */
-    .pile-stack { transition: box-shadow 0.7s ease-out; }
+    /* ── Result glow — CSS keyframe animations (reliable on iOS) ── */
+    @keyframes glowCorrect {
+      0%   { box-shadow: 0 0 0 2px #2ecc71, 0 0 18px #2ecc71, 0 0 36px rgba(46,204,113,0.55); outline-color: #2ecc71; }
+      100% { box-shadow: none; outline-color: transparent; }
+    }
+    @keyframes glowWrong {
+      0%   { box-shadow: 0 0 0 2px #e74c3c, 0 0 18px #e74c3c, 0 0 36px rgba(231,76,60,0.55); outline-color: #e74c3c; }
+      100% { box-shadow: none; outline-color: transparent; }
+    }
+    .pile-stack { outline: 2px solid transparent; outline-offset: 1px; }
+    .pile-stack.glow-correct {
+      animation: glowCorrect 0.9s ease-out forwards;
+    }
+    .pile-stack.glow-wrong {
+      animation: glowWrong 0.9s ease-out forwards;
+    }
+
+    /* Result badge — visible text indicator on the pile (iOS-safe fallback) */
+    .pile-result-badge {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      font-family: var(--mono);
+      padding: 1px 6px;
+      border-radius: 2px;
+      margin-top: 3px;
+      text-align: center;
+    }
+    .pile-result-badge.ok  { color: #2ecc71; border: 1px solid #2ecc71; background: rgba(46,204,113,0.12); }
+    .pile-result-badge.bad { color: #e74c3c; border: 1px solid #e74c3c; background: rgba(231,76,60,0.12); }
 
     /* ── Deck indicator ──────────────────────────── */
     #deck-info {
@@ -1212,26 +1239,31 @@ function showSdGameover() {
 }
 
 // ═══════════════════════════════════════════════
-//  Card glow — JS transition on pile-stack (avoids iOS keyframe caching)
+//  Card glow — CSS keyframe classes (works on iOS Safari)
 // ═══════════════════════════════════════════════
 function applyResultGlow() {
   if (G.phase !== 'result' || G.nominated === null) return;
   const pileEls = document.querySelectorAll('#piles-area .pile');
-  const stack   = pileEls[G.nominated]?.querySelector('.pile-stack');
+  const pileEl  = pileEls[G.nominated];
+  const stack   = pileEl?.querySelector('.pile-stack');
   if (!stack) return;
 
   const correct = G.lastResult === 'correct';
-  const peak    = correct
-    ? '0 0 16px #2ecc71, 0 0 32px rgba(46,204,113,0.5)'
-    : '0 0 16px #e74c3c, 0 0 32px rgba(231,76,60,0.5)';
+  const cls     = correct ? 'glow-correct' : 'glow-wrong';
 
-  // Snap to peak with no transition, then let the CSS transition fade it out
-  stack.style.transition = 'none';
-  stack.style.boxShadow  = peak;
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    stack.style.transition = 'box-shadow 0.7s ease-out';
-    stack.style.boxShadow  = '';
-  }));
+  // Remove then re-add to re-trigger the animation if same result back-to-back
+  stack.classList.remove('glow-correct', 'glow-wrong');
+  // Force reflow so removing+adding the same class restarts the animation
+  void stack.offsetWidth;
+  stack.classList.add(cls);
+
+  // Text badge below card as iOS-safe visual fallback
+  const existing = pileEl.querySelector('.pile-result-badge');
+  if (existing) existing.remove();
+  const badge = document.createElement('div');
+  badge.className = `pile-result-badge ${correct ? 'ok' : 'bad'}`;
+  badge.textContent = correct ? '✓ ok' : '✗ −1';
+  pileEl.appendChild(badge);
 }
 
 // ═══════════════════════════════════════════════
