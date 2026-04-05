@@ -116,6 +116,7 @@
       color: #f0a8a8;
       background: rgba(231,76,60,0.15);
     }
+    .btn-sd.locked { opacity: 0.35; cursor: not-allowed; }
 
     .btn-higher { border-color:#27ae60; background:rgba(39,174,96,0.10); color:#80e8a8; font-size:0.95rem; padding:9px 20px; }
     .btn-lower  { border-color:#e74c3c; background:rgba(231,76,60,0.10); color:#f0a8a8; font-size:0.95rem; padding:9px 20px; }
@@ -545,19 +546,19 @@
       }
     }
 
-    /* ── Deck glow animations ───────────────────── */
-    @keyframes deckGlowCorrect {
-      0%   { filter: drop-shadow(0 0 0px  rgba(46,204,113,0)); }
-      20%  { filter: drop-shadow(0 0 10px #2ecc71) drop-shadow(0 0 22px rgba(46,204,113,0.55)); }
-      100% { filter: drop-shadow(0 0 0px  rgba(46,204,113,0)); }
+    /* ── Card glow animations (box-shadow for broad Safari support) ── */
+    @keyframes cardGlowCorrect {
+      0%   { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(46,204,113,0); }
+      20%  { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 14px #2ecc71, 0 0 28px rgba(46,204,113,0.45); }
+      100% { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(46,204,113,0); }
     }
-    @keyframes deckGlowWrong {
-      0%   { filter: drop-shadow(0 0 0px  rgba(231,76,60,0)); }
-      20%  { filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 22px rgba(231,76,60,0.55)); }
-      100% { filter: drop-shadow(0 0 0px  rgba(231,76,60,0)); }
+    @keyframes cardGlowWrong {
+      0%   { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(231,76,60,0); }
+      20%  { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 14px #e74c3c, 0 0 28px rgba(231,76,60,0.45); }
+      100% { box-shadow: 1px 2px 5px rgba(0,0,0,0.5), 0 0 0px  rgba(231,76,60,0); }
     }
-    pre.card.glow-correct { animation: deckGlowCorrect 0.8s ease-out forwards; }
-    pre.card.glow-wrong   { animation: deckGlowWrong   0.8s ease-out forwards; }
+    pre.card.glow-correct { animation: cardGlowCorrect 0.8s ease-out forwards; }
+    pre.card.glow-wrong   { animation: cardGlowWrong   0.8s ease-out forwards; }
 
     /* ── Deck indicator ──────────────────────────── */
     #deck-info {
@@ -799,6 +800,7 @@ function toggleHints() {
 }
 
 function toggleSuddenDeath() {
+  if (G.turnsLeft < 43) return;
   G.suddenDeath = !G.suddenDeath;
   render();
 }
@@ -1130,7 +1132,9 @@ function renderHeader() {
 
   const sb = document.getElementById('btn-sd');
   sb.textContent = `Sudden Death: ${G.suddenDeath ? 'ON' : 'OFF'}`;
-  sb.className = `btn btn-sd${G.suddenDeath ? ' on' : ''}`;
+  const sdLocked = G.turnsLeft < 43;
+  sb.className = `btn btn-sd${G.suddenDeath ? ' on' : ''}${sdLocked ? ' locked' : ''}`;
+  sb.disabled = sdLocked;
 }
 
 // ═══════════════════════════════════════════════
