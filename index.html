@@ -180,6 +180,11 @@
     .pile.nominated .pile-stack {
       box-shadow: 0 0 0 2px var(--gold), 0 0 12px var(--gold), 0 0 24px rgba(232,160,0,0.45);
       outline: 2px solid var(--gold);
+      outline-offset: 1px;
+    }
+    /* During result phase the gold outline is removed so red/green can show cleanly */
+    .pile.nominated-result .pile-stack {
+      outline: 2px solid transparent;
     }
 
     /* Key badge shown on pile during nominate phase */
@@ -550,20 +555,30 @@
     }
 
     /* ── Result glow — CSS keyframe animations (reliable on iOS) ── */
+    @-webkit-keyframes glowCorrect {
+      0%   { box-shadow: 0 0 0 3px #2ecc71, 0 0 18px #2ecc71, 0 0 36px rgba(46,204,113,0.55); }
+      100% { box-shadow: none; }
+    }
     @keyframes glowCorrect {
-      0%   { box-shadow: 0 0 0 2px #2ecc71, 0 0 18px #2ecc71, 0 0 36px rgba(46,204,113,0.55); outline-color: #2ecc71; }
-      100% { box-shadow: none; outline-color: transparent; }
+      0%   { box-shadow: 0 0 0 3px #2ecc71, 0 0 18px #2ecc71, 0 0 36px rgba(46,204,113,0.55); }
+      100% { box-shadow: none; }
+    }
+    @-webkit-keyframes glowWrong {
+      0%   { box-shadow: 0 0 0 3px #e74c3c, 0 0 18px #e74c3c, 0 0 36px rgba(231,76,60,0.55); }
+      100% { box-shadow: none; }
     }
     @keyframes glowWrong {
-      0%   { box-shadow: 0 0 0 2px #e74c3c, 0 0 18px #e74c3c, 0 0 36px rgba(231,76,60,0.55); outline-color: #e74c3c; }
-      100% { box-shadow: none; outline-color: transparent; }
+      0%   { box-shadow: 0 0 0 3px #e74c3c, 0 0 18px #e74c3c, 0 0 36px rgba(231,76,60,0.55); }
+      100% { box-shadow: none; }
     }
-    .pile-stack { outline: 2px solid transparent; outline-offset: 1px; }
+    .pile-stack { }
     .pile-stack.glow-correct {
-      animation: glowCorrect 0.9s ease-out forwards;
+      -webkit-animation: glowCorrect 0.9s ease-out forwards;
+              animation: glowCorrect 0.9s ease-out forwards;
     }
     .pile-stack.glow-wrong {
-      animation: glowWrong 0.9s ease-out forwards;
+      -webkit-animation: glowWrong 0.9s ease-out forwards;
+              animation: glowWrong 0.9s ease-out forwards;
     }
 
     /* Result badge — visible text indicator on the pile (iOS-safe fallback) */
@@ -893,10 +908,13 @@ function renderPiles() {
     const newTopCard = nominated && G.phase === 'result';
 
     const pileEl = document.createElement('div');
+    const nominatedClass = nominated
+      ? (G.phase === 'result' ? 'nominated-result' : 'nominated')
+      : '';
     pileEl.className = ['pile',
-      isDead      ? 'dead'      : '',
-      nominated   ? 'nominated' : '',
-      clickable   ? 'clickable' : '',
+      isDead         ? 'dead'      : '',
+      nominatedClass,
+      clickable      ? 'clickable' : '',
     ].filter(Boolean).join(' ');
     if (clickable) pileEl.addEventListener('click', () => nominatePile(i));
 
@@ -1254,11 +1272,12 @@ function applyResultGlow() {
   const correct = G.lastResult === 'correct';
   const cls     = correct ? 'glow-correct' : 'glow-wrong';
 
-  // Remove then re-add to re-trigger the animation if same result back-to-back
-  stack.classList.remove('glow-correct', 'glow-wrong');
-  // Force reflow so removing+adding the same class restarts the animation
-  void stack.offsetWidth;
-  stack.classList.add(cls);
+  // Defer by one frame so iOS Safari paints the new element before animating
+  requestAnimationFrame(() => {
+    stack.classList.remove('glow-correct', 'glow-wrong');
+    void stack.offsetWidth; // force reflow to restart animation on repeat
+    stack.classList.add(cls);
+  });
 
   // Text badge below card as iOS-safe visual fallback
   const existing = pileEl.querySelector('.pile-result-badge');
