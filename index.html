@@ -890,6 +890,9 @@ function renderPiles() {
     } else {
       const topCard = pile.at(-1);
       const cardEl = makeCard(topCard, { isNew: newTopCard });
+      if (nominated && G.phase === 'result') {
+        cardEl.classList.add(G.lastResult === 'correct' ? 'glow-correct' : 'glow-wrong');
+      }
       stackEl.appendChild(cardEl);
     }
 
@@ -920,10 +923,7 @@ function renderDeck() {
   wrap.innerHTML = '';
 
   const backEl = document.createElement('pre');
-  const glowCls = G.phase === 'result'
-    ? (G.lastResult === 'correct' ? ' glow-correct' : ' glow-wrong')
-    : '';
-  backEl.className = 'card black' + glowCls;
+  backEl.className = 'card black';
   backEl.style.color = 'rgba(80,130,200,0.65)';
   backEl.textContent = DECK_BACK;
   wrap.appendChild(backEl);
