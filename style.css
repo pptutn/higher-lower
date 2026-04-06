@@ -23,10 +23,10 @@
         radial-gradient(circle at 15% 15%, rgba(255,255,255,0.04) 0%, transparent 55%),
         radial-gradient(circle at 85% 85%, rgba(0,0,0,0.15) 0%, transparent 55%);
       color: var(--text);
-      min-height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
     }
 
     /* ── Header ───────────────────────────────────── */
@@ -123,6 +123,8 @@
     /* ── Layout ───────────────────────────────────── */
     main {
       flex: 1;
+      min-height: 0;
+      overflow-y: auto;
       padding: 14px 14px 20px;
       display: flex;
       flex-direction: column;
@@ -211,9 +213,9 @@
     */
     pre.card {
       margin: 0;
-      padding: 0;
+      padding: 0 4px;
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 18px;
       line-height: 1.48;
       background: #fefefe;
       border-radius: 3px;
@@ -228,8 +230,9 @@
     pre.card.black { color: var(--c-blk); }
 
     pre.card.big {
-      font-size: 15px;
+      font-size: 23px;
       line-height: 1.52;
+      padding: 0 6px;
       box-shadow: 2px 3px 10px rgba(0,0,0,0.55);
     }
 
@@ -247,13 +250,13 @@
       background: var(--panel);
       border: 1px solid #265a32;
       border-radius: 4px;
-      padding: 18px 22px;
-      min-height: 130px;
+      padding: 12px 18px;
+      min-height: 100px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 13px;
+      gap: 9px;
     }
 
     .ap-prompt {
@@ -578,7 +581,7 @@
     /* ── Auto-advance progress bar (mobile result phase) ── */
     .ap-progress {
       width: 100%;
-      height: 3px;
+      height: 2px;
       background: rgba(255,255,255,0.08);
       border-radius: 2px;
       overflow: hidden;
@@ -612,7 +615,8 @@
 
     /* ── Responsive ──────────────────────────────── */
     @media (max-width: 600px) {
-      pre.card.big    { font-size: 12px; }
+      pre.card.big    { font-size: 12px; padding: 0; }
+      pre.card        { padding: 0; }
       .guess-row      { gap: 7px; }
       .btn-higher, .btn-lower, .btn-same {
         font-size: 0.9rem; padding: 13px 0; flex: 1; min-height: 48px;

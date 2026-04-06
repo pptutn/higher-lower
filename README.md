@@ -56,12 +56,18 @@ A card prediction game played against a shuffled 52-card deck. Select a pile, gu
 
 ## Tech
 
-Single self-contained HTML file — no dependencies, no build step, no framework.
+No dependencies, no build step, no framework.
 
-- Pure HTML / CSS / JavaScript
+| File | Lines | Purpose |
+|------|-------|---------|
+| `index.html` | ~110 | Structure and markup only |
+| `style.css` | ~750 | All styles and responsive layout |
+| `game.js` | ~650 | All game logic |
+
 - ASCII art cards rendered in `<pre>` elements with monospace font
 - Fisher-Yates shuffle over a standard 52-card deck
 - Probability hints calculated from remaining unseen cards
+- Strict CSP (`default-src 'none'`, `style-src 'self'`, `script-src 'self'`)
 
 ---
 
@@ -70,10 +76,17 @@ Single self-contained HTML file — no dependencies, no build step, no framework
 ```bash
 git clone https://github.com/pptutn/higher-lower.git
 cd higher-lower
-open index.html        # macOS
-# or
-xdg-open index.html    # Linux
-# or just drag index.html into any browser
 ```
 
-No server required.
+Then serve with any static file server — required because the browser blocks
+`file://` requests for external CSS/JS under the `script-src 'self'` CSP.
+
+```bash
+# Python
+python3 -m http.server
+
+# Node
+npx serve .
+```
+
+Then open `http://localhost:8000` (or whichever port is shown).

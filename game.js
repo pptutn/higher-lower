@@ -111,9 +111,7 @@ function makeGuess(guess) {
   G.phase = 'result';
   render();
 
-  if (window.matchMedia('(max-width: 600px)').matches) {
-    G._autoAdvance = setTimeout(nextTurn, 1500);
-  }
+  G._autoAdvance = setTimeout(nextTurn, 1500);
 }
 
 function nextTurn() {
@@ -438,11 +436,19 @@ function renderAction() {
         + ` &nbsp;·&nbsp; Actual <span class="hl">${actualStr}</span>`;
       panel.appendChild(det);
 
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-next';
-      btn.textContent = G.turnsLeft > 0 ? 'Next Turn  →' : 'Final Score  →';
-      btn.addEventListener('click', nextTurn);
-      panel.appendChild(btn);
+      const prog = document.createElement('div');
+      prog.className = 'ap-progress';
+      const fill = document.createElement('div');
+      fill.className = `ap-progress-fill ${correct ? 'ok' : 'bad'}`;
+      prog.appendChild(fill);
+      panel.appendChild(prog);
+
+      const hint = document.createElement('div');
+      hint.className = 'ap-tap-hint';
+      hint.textContent = 'click anywhere or press Enter to continue';
+      panel.appendChild(hint);
+
+      panel.onclick = e => { e.stopPropagation(); clearTimeout(G._autoAdvance); nextTurn(); };
     }
     syncPanelHeight();
     return;
