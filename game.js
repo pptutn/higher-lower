@@ -321,10 +321,15 @@ function renderAction() {
 
     const guessRow = document.createElement('div');
     guessRow.className = 'guess-row';
-    guessRow.innerHTML = `
-      <button class="btn btn-higher" onclick="event.stopPropagation();makeGuess('higher')">▲ Higher</button>
-      <button class="btn btn-same"   onclick="event.stopPropagation();makeGuess('same')"  >= Same</button>
-      <button class="btn btn-lower"  onclick="event.stopPropagation();makeGuess('lower')" >▼ Lower</button>`;
+    [['higher', '▲ Higher', 'btn-higher'],
+     ['same',   '= Same',   'btn-same'  ],
+     ['lower',  '▼ Lower',  'btn-lower' ]].forEach(([val, label, cls]) => {
+      const b = document.createElement('button');
+      b.className = `btn ${cls}`;
+      b.textContent = label;
+      b.addEventListener('click', e => { e.stopPropagation(); makeGuess(val); });
+      guessRow.appendChild(b);
+    });
     panel.appendChild(guessRow);
 
     if (probs) {
@@ -436,7 +441,7 @@ function renderAction() {
       const btn = document.createElement('button');
       btn.className = 'btn btn-next';
       btn.textContent = G.turnsLeft > 0 ? 'Next Turn  →' : 'Final Score  →';
-      btn.onclick = nextTurn;
+      btn.addEventListener('click', nextTurn);
       panel.appendChild(btn);
     }
     syncPanelHeight();
@@ -639,6 +644,15 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══════════════════════════════════════════════
-//  Boot
+//  Boot — wire static buttons, then start
 // ═══════════════════════════════════════════════
+document.getElementById('btn-sd')        .addEventListener('click', toggleSuddenDeath);
+document.getElementById('btn-hint')      .addEventListener('click', toggleHints);
+document.getElementById('btn-new')       .addEventListener('click', startGame);
+document.getElementById('btn-htp')       .addEventListener('click', openHtp);
+document.getElementById('btn-play-again').addEventListener('click', startGame);
+document.getElementById('htp-close')     .addEventListener('click', closeHtp);
+document.getElementById('htp-sheet')     .addEventListener('click', e => e.stopPropagation());
+document.getElementById('how-to-play')   .addEventListener('click', closeHtp);
+
 startGame();

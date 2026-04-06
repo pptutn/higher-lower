@@ -19,15 +19,15 @@
     <div id="turns-wrap">43 turns left</div>
   </div>
   <div class="hdr-right">
-    <button class="btn btn-sd"   id="btn-sd"   onclick="toggleSuddenDeath()">Sudden Death: OFF</button>
-    <button class="btn btn-hint" id="btn-hint" onclick="toggleHints()">Hints: OFF</button>
-    <button class="btn btn-sm"   onclick="startGame()">New Game</button>
-    <button class="btn btn-htp" onclick="openHtp()">?</button>
+    <button class="btn btn-sd"   id="btn-sd">Sudden Death: OFF</button>
+    <button class="btn btn-hint" id="btn-hint">Hints: OFF</button>
+    <button class="btn btn-sm"   id="btn-new">New Game</button>
+    <button class="btn btn-htp" id="btn-htp">?</button>
   </div>
 </header>
 
-<div id="how-to-play" onclick="closeHtp()">
-  <div class="htp-sheet" onclick="event.stopPropagation()">
+<div id="how-to-play">
+  <div class="htp-sheet" id="htp-sheet">
     <div class="htp-drag"></div>
     <div class="htp-title">How to Play</div>
 
@@ -80,7 +80,7 @@
       </div>
     </div>
 
-    <button class="htp-close" onclick="closeHtp()">Got it</button>
+    <button class="htp-close" id="htp-close">Got it</button>
   </div>
 </div>
 
@@ -101,7 +101,7 @@
     <div><span class="go-score" id="go-score">0</span><span class="go-score-suffix" id="go-score-suffix"></span></div>
     <div class="go-tier" id="go-tier"></div>
     <table class="go-table" id="go-table"></table>
-    <button class="btn btn-next" onclick="startGame()">▶ Play Again</button>
+    <button class="btn btn-next" id="btn-play-again">▶ Play Again</button>
   </div>
 </div>
 
