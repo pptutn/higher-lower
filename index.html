@@ -172,14 +172,25 @@
 
     .pile.clickable { cursor: pointer; }
 
-    .pile.clickable:hover pre.card {
-      outline: 1px solid rgba(255,255,255,0.28);
-      outline-offset: 2px;
+    /* Desktop hover only — not applied on iOS (no real hover) */
+    @media (hover: hover) {
+      .pile.clickable:hover pre.card {
+        outline: 1px solid rgba(255,255,255,0.28);
+        outline-offset: 2px;
+      }
     }
 
-    /* Gold outline directly on the card element — avoids iOS pile-stack compositor bug */
+    /* Card state outlines — on the pre.card itself, iOS-safe */
     pre.card.card-nominated {
-      outline: 3px solid var(--gold);
+      outline: 3px solid var(--gold) !important;
+      outline-offset: 2px;
+    }
+    pre.card.card-correct {
+      outline: 3px solid #2ecc71 !important;
+      outline-offset: 2px;
+    }
+    pre.card.card-wrong {
+      outline: 3px solid #e74c3c !important;
       outline-offset: 2px;
     }
 
@@ -550,20 +561,7 @@
       }
     }
 
-    /* ── Result glow overlay — opacity transition (GPU-composited, iOS-safe) ── */
-    /* A child div is inserted into .pile-stack and faded out via opacity.      */
-    /* opacity transitions are hardware-accelerated on all iOS Safari versions. */
-    .pile-glow-overlay {
-      position: absolute;
-      inset: -4px;
-      border-radius: 5px;
-      pointer-events: none;
-      border: 3px solid transparent;
-      -webkit-transition: opacity 0.85s ease-out;
-              transition: opacity 0.85s ease-out;
-    }
-    .pile-glow-overlay.correct { border-color: #2ecc71; }
-    .pile-glow-overlay.wrong   { border-color: #e74c3c; }
+    /* (result card outlines defined above with .card-correct / .card-wrong) */
 
     /* Result badge — visible text indicator on the pile (iOS-safe fallback) */
     .pile-result-badge {
@@ -909,8 +907,13 @@ function renderPiles() {
     } else {
       const topCard = pile.at(-1);
       const cardEl = makeCard(topCard, { isNew: newTopCard });
-      // Gold outline on the card element itself (not pile-stack) for iOS compat
-      if (nominated && G.phase !== 'result') cardEl.classList.add('card-nominated');
+      if (nominated) {
+        if (G.phase === 'result') {
+          cardEl.classList.add(G.lastResult === 'correct' ? 'card-correct' : 'card-wrong');
+        } else {
+          cardEl.classList.add('card-nominated');
+        }
+      }
       stackEl.appendChild(cardEl);
     }
 
@@ -1242,27 +1245,15 @@ function showSdGameover() {
 }
 
 // ═══════════════════════════════════════════════
-//  Card glow — opacity-transition overlay (GPU-composited, iOS-safe)
+//  Result badge — card outline set in renderPiles(), badge added here
 // ═══════════════════════════════════════════════
 function applyResultGlow() {
   if (G.phase !== 'result' || G.nominated === null) return;
   const pileEls = document.querySelectorAll('#piles-area .pile');
   const pileEl  = pileEls[G.nominated];
-  const stack   = pileEl?.querySelector('.pile-stack');
-  if (!stack) return;
+  if (!pileEl) return;
 
   const correct = G.lastResult === 'correct';
-
-  // Insert overlay at opacity:1, then fade to 0 in next frame.
-  // opacity transitions are GPU-composited on all iOS Safari versions.
-  const overlay = document.createElement('div');
-  overlay.className = `pile-glow-overlay ${correct ? 'correct' : 'wrong'}`;
-  overlay.style.opacity = '1';
-  stack.appendChild(overlay);
-  requestAnimationFrame(() => { overlay.style.opacity = '0'; });
-  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-
-  // Text badge — reliable fallback for any remaining iOS edge cases
   const badge = document.createElement('div');
   badge.className = `pile-result-badge ${correct ? 'ok' : 'bad'}`;
   badge.textContent = correct ? '✓ ok' : '✗ −1';
