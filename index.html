@@ -1005,9 +1005,9 @@ function renderAction() {
     const guessRow = document.createElement('div');
     guessRow.className = 'guess-row';
     guessRow.innerHTML = `
-      <button class="btn btn-higher" onclick="makeGuess('higher')">▲ Higher</button>
-      <button class="btn btn-same"   onclick="makeGuess('same')"  >= Same</button>
-      <button class="btn btn-lower"  onclick="makeGuess('lower')" >▼ Lower</button>`;
+      <button class="btn btn-higher" onclick="event.stopPropagation();makeGuess('higher')">▲ Higher</button>
+      <button class="btn btn-same"   onclick="event.stopPropagation();makeGuess('same')"  >= Same</button>
+      <button class="btn btn-lower"  onclick="event.stopPropagation();makeGuess('lower')" >▼ Lower</button>`;
     panel.appendChild(guessRow);
 
     if (probs) {
