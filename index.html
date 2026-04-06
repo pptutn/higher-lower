@@ -379,6 +379,122 @@
 
     .result-detail .hl { color: var(--text); }
 
+    /* ── How to Play overlay ────────────────────── */
+    #how-to-play {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 300;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+    #how-to-play.show { display: flex; }
+
+    .htp-sheet {
+      background: var(--header);
+      border: 1px solid #265a32;
+      border-radius: 12px 12px 0 0;
+      padding: 20px 22px 32px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 88vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .htp-drag {
+      width: 36px; height: 4px;
+      background: #3a6a3a;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .htp-title {
+      font-size: 0.85rem;
+      letter-spacing: 0.22em;
+      color: var(--gold);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .htp-section {
+      margin-bottom: 14px;
+    }
+
+    .htp-section-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .htp-section p, .htp-section li {
+      font-size: 0.78rem;
+      color: var(--text);
+      line-height: 1.6;
+      letter-spacing: 0.03em;
+    }
+
+    .htp-section ul {
+      padding-left: 1.1em;
+      margin: 0;
+    }
+
+    .htp-section li { margin-bottom: 3px; }
+
+    .htp-rule-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 5px 10px;
+      font-size: 0.78rem;
+    }
+
+    .htp-rule-key {
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .htp-rule-val {
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .htp-divider {
+      border: none;
+      border-top: 1px solid #1e4025;
+      margin: 14px 0;
+    }
+
+    .htp-close {
+      display: block;
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--muted);
+      border-radius: 3px;
+      color: var(--text);
+      cursor: pointer;
+      min-height: 44px;
+    }
+
+    .htp-close:active { background: rgba(255,255,255,0.06); }
+
+    .btn-htp {
+      border-color: var(--muted);
+      background: transparent;
+      color: var(--muted);
+    }
+    .btn-htp:hover { background: rgba(255,255,255,0.07); }
+
     /* ── Game Over overlay ───────────────────────── */
     #gameover {
       display: none;
@@ -656,8 +772,67 @@
     <button class="btn btn-sd"   id="btn-sd"   onclick="toggleSuddenDeath()">Sudden Death: OFF</button>
     <button class="btn btn-hint" id="btn-hint" onclick="toggleHints()">Hints: OFF</button>
     <button class="btn btn-sm"   onclick="startGame()">New Game</button>
+    <button class="btn btn-htp" onclick="openHtp()">?</button>
   </div>
 </header>
+
+<div id="how-to-play" onclick="closeHtp()">
+  <div class="htp-sheet" onclick="event.stopPropagation()">
+    <div class="htp-drag"></div>
+    <div class="htp-title">How to Play</div>
+
+    <div class="htp-section">
+      <div class="htp-section-title">The Setup</div>
+      <p>A standard 52-card deck is shuffled. Nine cards are dealt face-up into nine piles. The remaining 43 cards form the draw pile.</p>
+    </div>
+
+    <hr class="htp-divider">
+
+    <div class="htp-section">
+      <div class="htp-section-title">Each Turn</div>
+      <div class="htp-rule-grid">
+        <span class="htp-rule-key">1.</span>
+        <span class="htp-rule-val">Tap a pile to select it.</span>
+        <span class="htp-rule-key">2.</span>
+        <span class="htp-rule-val">Guess whether the next card drawn will be <b>Higher</b>, <b>Lower</b>, or the <b>Same</b> value as the top card.</span>
+        <span class="htp-rule-key">3.</span>
+        <span class="htp-rule-val">A card is drawn and placed on that pile. Wrong guess = <b>−1 point</b>.</span>
+      </div>
+    </div>
+
+    <hr class="htp-divider">
+
+    <div class="htp-section">
+      <div class="htp-section-title">Card Values</div>
+      <p>A = 1 &nbsp;·&nbsp; 2–10 face value &nbsp;·&nbsp; J = 11 &nbsp;·&nbsp; Q = 12 &nbsp;·&nbsp; K = 13</p>
+    </div>
+
+    <hr class="htp-divider">
+
+    <div class="htp-section">
+      <div class="htp-section-title">Scoring</div>
+      <ul>
+        <li>Start at 0. Each wrong guess costs 1 point.</li>
+        <li>Finish with 0 for a perfect game.</li>
+        <li>The game ends after all 43 draws.</li>
+      </ul>
+    </div>
+
+    <hr class="htp-divider">
+
+    <div class="htp-section">
+      <div class="htp-section-title">Options</div>
+      <div class="htp-rule-grid">
+        <span class="htp-rule-key">Hints</span>
+        <span class="htp-rule-val">Shows the probability of each outcome based on cards not yet seen.</span>
+        <span class="htp-rule-key">Sudden Death</span>
+        <span class="htp-rule-val">A wrong guess kills that pile — its card is flipped and it can't be selected again. Must be enabled before the first turn.</span>
+      </div>
+    </div>
+
+    <button class="htp-close" onclick="closeHtp()">Got it</button>
+  </div>
+</div>
 
 <main>
   <div class="piles-with-deck" id="piles-with-deck">
@@ -1274,11 +1449,26 @@ function render() {
 }
 
 // ═══════════════════════════════════════════════
+//  How to Play
+// ═══════════════════════════════════════════════
+function openHtp() {
+  document.getElementById('how-to-play').classList.add('show');
+}
+function closeHtp() {
+  document.getElementById('how-to-play').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════
 //  Keyboard shortcuts
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+  if (e.key === 'Escape') {
+    closeHtp();
+    return;
+  }
 
   if (G.phase === 'nominate' || G.phase === 'guess') {
     const n = parseInt(e.key);
